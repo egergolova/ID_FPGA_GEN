@@ -4,6 +4,7 @@
 const int len_pack=16+5;
 const int am_stop=5;
 
+// function, which checks, whether the given number is a power of 2
 int is_pow(int a){
     int met=0;
     if(!a){
@@ -23,6 +24,7 @@ int is_pow(int a){
     return 1;
 }
 
+// initializes ID, inserts Hamming bits on corresponding places (1,2,4,8 and so on)
 int init_Ham(int val){
         int curr_bit=0;
         int ham_val=0;
@@ -35,6 +37,7 @@ int init_Ham(int val){
     return ham_val;
 }
 
+// encodes the given ID int packet with correct Hamming value
 int encode_Ham(int val){
     int curr_bit=0;
     // int check_bits=0;
@@ -61,6 +64,9 @@ int encode_Ham(int val){
     return val;
 }
 
+// checks the correspondence of Hamming values to
+// the stored ID value, corrects it in case with 1
+// mistake and detects in case with 2 mistakes
 int check_Ham(int val){
     int res=0;
     int curr_bit=0;
@@ -89,6 +95,8 @@ int check_Ham(int val){
          //  printf("%x\n",res);
     return res;
 }
+
+// inserts stored Hamming values into the received ID
 int insert_Ham(int val, int ham){
     int curr_ham=0;
     int curr_val=0;
@@ -105,6 +113,8 @@ int insert_Ham(int val, int ham){
         return val_fin;
     }
 }
+
+// function, which returns the actual value (initial ID) without parity bits
 int decode_Ham(int val){
    int res=0;
    int copy_bit=0;
