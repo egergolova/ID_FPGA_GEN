@@ -89,7 +89,22 @@ int check_Ham(int val){
          //  printf("%x\n",res);
     return res;
 }
-
+int insert_Ham(int val, int ham){
+    int curr_ham=0;
+    int curr_val=0;
+    int val_fin=0;
+    for(int i=0; i<len_pack; i++){
+        if(is_pow(i)){
+            val_fin|=((ham>>curr_ham)&1)<<i;
+            curr_ham++;
+        }
+        else{
+            val_fin|=((val>>curr_val)&1)<<i;
+            curr_val++;
+        }
+        return val_fin;
+    }
+}
 int decode_Ham(int val){
    int res=0;
    int copy_bit=0;
