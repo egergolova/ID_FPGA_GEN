@@ -70,7 +70,7 @@ int check_Ham(int val){
             if((j>>i)&1){
                 
                 curr_bit^=(val>>(j))&1;
-                printf("bit %x, ind %x\n",(val>>(j))&1,j);
+                // printf("bit %x, ind %x\n",(val>>(j))&1,j);
             }
         }
         res|=curr_bit<<(i);
@@ -113,33 +113,34 @@ int IDs[]={
 0b0101100100011101,
 0b0000011010010101
 };
-int Ham_synd[10]={};
-int val;
+int Ham_codes[10]={};
+int Mist_synd[10]={};
+int Ham_dec[10]={};
 int main(){
-    // scanf_s("%x",&val);
-    // printf("\n");
-    int ham_val=init_Ham(val);
+    // initialize and ENCODE the Hamming
     for(int i=0; i<10; i++){
          int ham=IDs[i];
          ham=init_Ham(ham);
-         Ham_synd[i]=encode_Ham(ham);
-        //  printf("val %x =%x\n",i,IDs[i]);
-        //    printf("syndrome %x =%x\n",i,Ham_synd[i]);
+         Ham_codes[i]=encode_Ham(ham);
+    }
+    // checking, decoding and correcting mistakes if possible.
+    for(int i=0; i<10; i++){
+        Mist_synd[i]=check_Ham(Ham_codes[i]);
+        Ham_dec[i]=decode_Ham(Ham_codes[i]);
+        // printf("%x\n",Mist_synd[i]);
+        // if Syndrome is not equal to zero
+        if(Mist_synd[i]){
+            // ret val in case if is not possible to correct. Indicates 2 mistakes
+            if(Mist_synd[i]==-1){
+                //incorrectable mistake. insert code with restarting the IP
+            }
+            // correcting one mistake by flipping the incorrect bit.
+            else{
+                Ham_dec[i]^=1<<Mist_synd[i];
+            }
+        }
     }
 
-   // ham_val&=0x3FFEEC;
-    // int res=check_Ham(ham_val);
-    // printf("syndrome =%x\n",res);
-    // printf("val =%x\n",ham_val);
-    // if(res==-1){
-    //     printf("can not correct, 2 mistakes");
-    //     return -1;
-    // }
-    // if(res){
-    //     ham_val^=1<<res;
-    // }
-    // ham_val=decode_Ham(ham_val);
-    // printf("init val= %x\n", ham_val);
-    // printf("%x", ham_val);
+
 
 }
