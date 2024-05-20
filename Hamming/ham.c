@@ -37,6 +37,7 @@ int init_Ham(int val){
 
 int encode_Ham(int val){
     int curr_bit=0;
+    // int check_bits=0;
     for(int i=0; i<am_stop; i++){
         for(int j=1; j<=len_pack; j++){
             if((j>>i)&1){
@@ -44,6 +45,7 @@ int encode_Ham(int val){
             }
         }
         val|=curr_bit<<((1<<i)-1);
+        // check_bits|=curr_bit<<(i);
         curr_bit=0;
     }
 
@@ -51,9 +53,11 @@ int encode_Ham(int val){
     for(int i=0; i<len_pack; i++){
         curr_bit^=(val>>i)&1;
     }
+    // printf("val is %x\n",check_bits);
     val=val<<1;
     val|=curr_bit;
-    printf("val is %x\n",val);
+    // check_bits=check_bits<<1;
+    // check_bits|=curr_bit;
     return val;
 }
 
@@ -70,7 +74,7 @@ int check_Ham(int val){
             }
         }
         res|=curr_bit<<(i);
-        printf("%x\n",res);
+        // printf("%x\n",res);
         curr_bit=0;
    }
    //check general parity bit
@@ -78,7 +82,7 @@ int check_Ham(int val){
     curr_bit^=(val>>i)&1;
    }
    // 2 mistakes, can only detect
-   printf("parity %x\n",curr_bit);
+//    printf("parity %x\n",curr_bit);
    if(res && !curr_bit){
         return -1;
    }
@@ -97,25 +101,45 @@ int decode_Ham(int val){
     }
     return res;
 }
-
+int IDs[]={
+0b0101000110010000,
+0b0001000100010000,
+0b0001100100010000,
+0b0001111100010111,
+0b0001000000010101,
+0b0000100100010010,
+0b0001101100010101,
+0b0001100100010111,
+0b0101100100011101,
+0b0000011010010101
+};
+int Ham_synd[10]={};
 int val;
 int main(){
-    scanf_s("%x",&val);
-    printf("\n");
+    // scanf_s("%x",&val);
+    // printf("\n");
     int ham_val=init_Ham(val);
-    ham_val=encode_Ham(ham_val);
+    for(int i=0; i<10; i++){
+         int ham=IDs[i];
+         ham=init_Ham(ham);
+         Ham_synd[i]=encode_Ham(ham);
+        //  printf("val %x =%x\n",i,IDs[i]);
+        //    printf("syndrome %x =%x\n",i,Ham_synd[i]);
+    }
+
    // ham_val&=0x3FFEEC;
-    int res=check_Ham(ham_val);
-    printf("syndrome =%x\n",res);
-    printf("val =%x\n",ham_val);
-    if(res==-1){
-        printf("can not correct, 2 mistakes");
-        return -1;
-    }
-    if(res){
-        ham_val^=1<<res;
-    }
-    ham_val=decode_Ham(ham_val);
-    printf("init val= %x\n", ham_val);
-    printf("%x", ham_val);
+    // int res=check_Ham(ham_val);
+    // printf("syndrome =%x\n",res);
+    // printf("val =%x\n",ham_val);
+    // if(res==-1){
+    //     printf("can not correct, 2 mistakes");
+    //     return -1;
+    // }
+    // if(res){
+    //     ham_val^=1<<res;
+    // }
+    // ham_val=decode_Ham(ham_val);
+    // printf("init val= %x\n", ham_val);
+    // printf("%x", ham_val);
+
 }
