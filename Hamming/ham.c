@@ -37,7 +37,7 @@ int init_Ham(int val){
     return ham_val;
 }
 
-// encodes the given ID int packet with correct Hamming value
+// encodes the given ID into packet with correct Hamming value
 int encode_Ham(int val){
     int curr_bit=0;
     // int check_bits=0;
@@ -142,30 +142,33 @@ int Ham_codes[10]={};
 int Mist_synd[10]={};
 int Ham_dec[10]={};
 int main(){
+    
     // initialize and ENCODE the Hamming
     for(int i=0; i<10; i++){
          int ham=IDs[i];
          ham=init_Ham(ham);
          Ham_codes[i]=encode_Ham(ham);
     }
+
     // checking, decoding and correcting mistakes if possible.
     for(int i=0; i<10; i++){
         Mist_synd[i]=check_Ham(Ham_codes[i]);
         Ham_dec[i]=decode_Ham(Ham_codes[i]);
-        // printf("%x\n",Mist_synd[i]);
+
         // if Syndrome is not equal to zero
         if(Mist_synd[i]){
+
             // ret val in case if is not possible to correct. Indicates 2 mistakes
             if(Mist_synd[i]==-1){
+
                 //incorrectable mistake. insert code with restarting the IP
             }
+
             // correcting one mistake by flipping the incorrect bit.
             else{
                 Ham_dec[i]^=1<<Mist_synd[i];
             }
         }
     }
-
-
 
 }

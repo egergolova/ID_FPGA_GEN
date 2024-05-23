@@ -64,7 +64,7 @@
 #include "xuartlite.h"
 #include "xil_printf.h"
 #include <string.h>
-
+#include "microblaze_sleep.h"
 #define UART_BASE_ADDRESS 0x40600000 // Базовый адрес UARTLite
 #define ID_GET_BASE_ADDRESS 0x44a00000 // Базовый адрес собственного IP блока ID_GET
 #define AXI_MEM_BASE_ADDRESS 0x60000000 // Базовый адрес AXI Memory
@@ -75,7 +75,8 @@ int main() {
   // Инициализация UARTLite
   XUartLite UartPtr;
   XUartLite_Initialize(&UartPtr, UART_BASE_ADDRESS);
-
+  Xuint32 *baseaddr_p = (Xuint32 *)AXI_MEM_BASE_ADDRESS;
+  int data;
   while (1){
 	  u8 command[100]; // Буфер для хранения команды
 	  // Прием команды с UARTLite
@@ -85,11 +86,15 @@ int main() {
 		  command[bytesReceived - 1] = '\0';
 
 	      if (strcmp(&command, "GET_ID") == 0) { // Вывод ID устройства
-	    	Xuint32 *baseaddr_p = (Xuint32 *)AXI_MEM_BASE_ADDRESS;
+				    
 
 //	        xil_printf("ID: 0x12345678\n");
 	      } else if (strcmp(&command, "GET_RND") == 0) { // Генерация и вывод случайного числа
-
+			*(baseaddr_p)=1;
+			MB_Sleep(2);
+			data=*(baseaddr_p+2);
+			*(baseaddr_p)=0;
+			xil_printf("rand num %x\n", data);
 	      } else if (strcmp(&command, "CIPHER") == 0) { // Шифрование данных (не реализовано)
 
 	        xil_printf("Функция шифрования еще не реализована\n");
