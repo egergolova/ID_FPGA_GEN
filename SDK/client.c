@@ -68,12 +68,22 @@
 #include "microblaze_sleep.h"
 #include "sleep.h"
 
-#define UART_BASE_ADDRESS 0x40600000 // ������� ����� UARTLite
-#define ID_GET_BASE_ADDRESS 0x44a00000 // ������� ����� ������������ IP ����� ID_GET
-#define AXI_MEM_BASE_ADDRESS 0x44a00000 // ������� ����� AXI Memory
+#define UART_BASE_ADDRESS 0x40600000
+#define ID_GET_BASE_ADDRESS 0x44a00000
+#define AXI_MEM_BASE_ADDRESS 0x44a00000
 #define ENTER_KEY 0x0D
 
+#define GEN_RAND *(AXI_MEM_BASE_ADDRESS)
+#define LEDS *(AXI_MEM_BASE_ADDRESS+1) 
+#define RAND *(AXI_MEM_BASE_ADDRESS+2)
 
+#define LFSR_ADDR 0xA
+#define INIT_ST *(LFSR_ADDR)
+#define INIT_V *(LFSR_ADDR+1)
+#define D_READY *(LFSR_ADDR+2)
+#define DATA_IN *(LFSR_ADDR+3)
+#define E_READY *(LFSR_ADDR+4)
+#define DATA_OUT *(LFSR_ADDR+5)
 const int len_pack=16+5;
 const int am_stop=5;
 
@@ -147,7 +157,7 @@ int check_Ham(int val){
     for(int i=0; i<am_stop; i++){
         for(int j=1; j<=len_pack; j++){
             if((j>>i)&1){
-                
+
                 curr_bit^=(val>>(j))&1;
                 // printf("bit %x, ind %x\n",(val>>(j))&1,j);
             }
@@ -204,91 +214,115 @@ int decode_Ham(int val){
 
 
 void receiveUntilEnter(XUartLite *UartPtr, u8 *buffer, int buffer_size) {
-	int bytesReceived = 0;
-	int totalBytesReceived = 0;
+  int bytesReceived = 0;
+  int totalBytesReceived = 0;
 
-	while (1) {
-		bytesReceived = XUartLite_Recv(UartPtr, &buffer[totalBytesReceived], 1);
-		if (bytesReceived > 0) {
-			xil_printf("%c", buffer[totalBytesReceived]);
-			if (buffer[totalBytesReceived] == ENTER_KEY) { // ���� ������ ��� ENTER
-				buffer[totalBytesReceived] = '\0';
-				xil_printf("\n\r");
-				break;
-			}
-			totalBytesReceived++;
-			if (totalBytesReceived >= buffer_size - 1) { // ���� ����� ��������
-				buffer[totalBytesReceived] = '\0';
-				xil_printf("\n\r");
-				break;
-			}
-		}
-	}
+  while (1) {
+    bytesReceived = XUartLite_Recv(UartPtr, &buffer[totalBytesReceived], 1);
+    if (bytesReceived > 0) {
+      xil_printf("%c", buffer[totalBytesReceived]);
+      if (buffer[totalBytesReceived] == ENTER_KEY) {
+        buffer[totalBytesReceived] = '\0';
+        xil_printf("\n\r");
+        break;
+      }
+      totalBytesReceived++;
+      if (totalBytesReceived >= buffer_size - 1) {
+        buffer[totalBytesReceived] = '\0';
+        xil_printf("\n\r");
+        break;
+      }
+    }
+  }
 }
 
 int main() {
-	// ������������� UARTLite
-	XUartLite UartPtr;
-	XUartLite_Initialize(&UartPtr, UART_BASE_ADDRESS);
-	Xuint32 *baseaddr_p = (Xuint32 *) AXI_MEM_BASE_ADDRESS;
-	xil_printf("\rHello! Enter the command:\n\r");
-	int data;
-	// this hamming distance shall be implemented during initialization somehow
-	int ham_dist=0;
-	// get ID from initialized microcontroller
-	int ID=*(baseaddr_p + 1);
-	ID=init_Ham(ID);
-	ID=inert_Ham(ID,ham_dist);
-	int err_bit=check_Ham(ID);
-		if(err_bit){
-			if(err_bit==-1){
-				//restart
-			}
-			else{
-				ID^=1<<err;
-			}
-		}
+  XUartLite UartPtr;
+  XUartLite_Initialize(&UartPtr, UART_BASE_ADDRESS);
+  Xuint32 *baseaddr_p = (Xuint32 *) AXI_MEM_BASE_ADDRESS;
+  XUint32 *baseaddr_LFSR= (Xuint32 *) LFSR_ADDR;
+  xil_printf("\rHello! Enter the command:\n\r");
+  int data;
+  // this hamming distance shall be implemented during initialization somehow
+  int ham_dist=0;
+  // get ID from initialized microcontroller
+  int ID=*(baseaddr_p + 1);
+//  ID=init_Ham(ID);
+//  ID=insert_Ham(ID,ham_dist);
+//  int err_bit=check_Ham(ID);
+//    if(err_bit){
+//      if(err_bit==-1){
+//        //restart
+//      }
+//      else{
+//        ID^=1<<err_bit;
+//      }
+//    }
 
-	while (1) {
-		u8 command[100]; // ����� ��� �������� �������
-		// ����� ������� � UARTLite
-//	  int bytesReceived = XUartLite_Recv(&UartPtr, command, sizeof(command));
-		receiveUntilEnter(&UartPtr, &command, 100);
-		if (strcmp(&command, "GET_ID") == 0) { // ����� ID ����������
-			xil_printf("%x\n\r",ID);
+  while (1) {
+    u8 command[100];
+//    int bytesReceived = XUartLite_Recv(&UartPtr, command, sizeof(command));
+    receiveUntilEnter(&UartPtr, &command, 100);
+    if (strcmp(&command, "GET_ID") == 0) {
+        xil_printf("%x\n\r",ID);
 
-//	        xil_printf("ID: 0x12345678\n");
-		} else if (strcmp(&command, "GET_RAND") == 0) { // ��������� � ����� ���������� �����
-			xil_printf("SLV_REG0 %x\n\r", *(baseaddr_p));
-			xil_printf("SLV_REG1 %x\n\r", *(baseaddr_p + 1));
-			xil_printf("SLV_REG2 %x\n\r", *(baseaddr_p + 2));
-			*(baseaddr_p) = 0xFFFFFFFF;
-			//MB_Sleep(50);
-			for(int i=0; i<10000; i++){};
-			data = *(baseaddr_p + 2);
-			*(baseaddr_p) = 0;
+//          xil_printf("ID: 0x12345678\n");
+    } 
+    else if (strcmp(&command, "GET_RAND") == 0) {
+        // xil_printf("SLV_REG0 %x\n\r", *(baseaddr_p));
+        // xil_printf("SLV_REG1 %x\n\r", *(baseaddr_p + 1));
+        // xil_printf("SLV_REG2 %x\n\r", *(baseaddr_p + 2));
+        *(baseaddr_p) = 0x1;
+        GEN_RAND=0x1;
+        //MB_Sleep(50);
+        for(int i=0; i<10000; i++){};
+        data = RAND;
+        GEN_RAND = 0;
 
-			xil_printf("rand num %x\n\r", data);
-			xil_printf("SLV_REG0 %x\n\r", *(baseaddr_p));
-			xil_printf("SLV_REG1 %x\n\r", *(baseaddr_p + 1));
-			xil_printf("SLV_REG2 %x\n\r", *(baseaddr_p + 2));
-		} else if (strcmp(&command, "CIPHER") == 0) { // ���������� ������ (�� �����������)
-			for(int i=0; i<10000; i++){};
-			data = *(baseaddr_p + 2);
-			*(baseaddr_p) = 0;
-			// need to receive the size of file.
+        xil_printf("%x", data);
+    //     xil_printf("SLV_REG0 %x\n\r", *(baseaddr_p));
+    //   xil_printf("SLV_REG1 %x\n\r", *(baseaddr_p + 1));
+    //   xil_printf("SLV_REG2 %x\n\r", *(baseaddr_p + 2));
+    } 
+    else if (strcmp(&command, "CIPHER") == 0) {
+        for(int i=0; i<10000; i++){};
+        data = *(baseaddr_p + 2);
+        *(baseaddr_p) = 0;
+      // need to receive the size of file.
 
-			xil_printf("Encipher function is not ready yet\n");
-		} else if (strcmp(&command, "FINISH") == 0) { // ���������� ������
 
-			xil_printf("Finish the programm\n");
-			return 0;
-			break;
-		} else { // ����������� �������
+      // file received
+      int size_f=0;
+      word data_f[10000]={};
+      INIT_V= ID;
+      INIT_ST=1;
+      for(int i=0; i<100; i++){}
+      INIT_ST=0;
+      for(int i=0; i<size_f; i++){
+        //data_in
+        DATA_IN=data_f[i];
+        // d_ready
+        D_READY=1;
+        //e_ready
+        while(!E_READY){}
 
-			xil_printf("Unknown command: %s\n", command);
-		}
+        // data_out
+        data_f[i]=DATA_OUT;
+        D_READY=0;
+      }
+        xil_printf("Encipher function is not ready yet\n");
+    } 
+    else if (strcmp(&command, "FINISH") == 0) {
 
-	}
+        xil_printf("Finish the programm\n");
+        return 0;
+        break;
+    } 
+    else {
+
+        xil_printf("Unknown command: %s\n", command);
+    }
+
+  }
 
 }
