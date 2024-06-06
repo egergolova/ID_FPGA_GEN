@@ -34,14 +34,14 @@ XIntc InterruptController;
 #define ID_GET_BASE_ADDRESS 0x44a00000
 #define LFSR_BASE_ADDRESS 0x44a10000
 #define ENTER_KEY 0x0D
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 10024
 const int len_pack = 16 + 5;
 const int am_stop = 5;
 
 u8 RecvBuffer[BUFFER_SIZE] = { };
 int TotalReceivedCount = 0;
 u8 command[15] = { };
-u8 data_f[1000] = { };
+u8 data_f[10000] = { };
 int dataIsReady = 0;
 
 void UartLiteIntrHandler(void *CallBackRef, unsigned int EventData) {
@@ -52,7 +52,6 @@ void UartLiteIntrHandler(void *CallBackRef, unsigned int EventData) {
 		int i = 0;
 		while (i < TotalReceivedCount) {
 			command[i] = RecvBuffer[i];
-//			xil_printf("%c", command[i]);
 			i++;
 		};
 		command[i] = '\0';
@@ -62,12 +61,10 @@ void UartLiteIntrHandler(void *CallBackRef, unsigned int EventData) {
 		int i = 0;
 		while (i < TotalReceivedCount) {
 			data_f[i] = RecvBuffer[i];
-//			xil_printf("%c", data_f[i]);
 			i++;
 		};
 		data_f[i] = '\0';
 		TotalReceivedCount = 0;
-//		dataIsReady = 1;
 	} else {
 	TotalReceivedCount++;
 	dataIsReady = 0;};
@@ -262,22 +259,26 @@ int main() {
 	int ham_dist = 0;
 	// get ID from initialized microcontroller
 	int ID = *(baseaddr_p + 1);
-			/*		  ID=init_Ham(ID);
-			 ID=insert_Ham(ID,ham_dist);
-			 int err_bit=check_Ham(ID);
-			 if(err_bit){
-			 if(err_bit==-1){
-			 //restart
-			 }
-			 else{
-			 ID^=1<<err_bit;
-			 }
-			 }*/
 	int data = 0;
 	while (1) {
 		receiveUntil();
 		if (strcmp(command, "GET_ID") == 0) {
 			xil_printf("ID: %x", ID);
+		}else if (strcmp(command, "ID_CHECK") == 0) {
+			int ID = *(baseaddr_p + 1);
+			ID=init_Ham(ID);
+			ID=insert_Ham(ID,ham_dist);
+			int err_bit=check_Ham(ID);
+			if(err_bit){
+				if(err_bit==-1){
+					xil_printf("-1");
+				}
+				else{
+					ID^=1<<err_bit;
+					}
+				}
+
+			xil_printf("%x",ID);
 		} else if (strcmp(command, "GET_RAND") == 0) {
 			*(baseaddr_p) =0;
 			MB_Sleep(20);
@@ -286,7 +287,7 @@ int main() {
 			data=*(baseaddr_p+2);
 			*(baseaddr_p) = 0;
 			data = *(baseaddr_p + 2);
-			xil_printf("A truly random number: %x", data);
+			xil_printf("%x", data);
 		} else if (strcmp(command, "CIPHER") == 0) {
 			*(baseaddr_p) = 1;
 			sleep(1);
